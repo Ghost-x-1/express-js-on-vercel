@@ -1,12 +1,331 @@
-<html>
-  <head>
-    <meta charset="utf-8"/>
-    <title>Express on Vercel</title>
-    <link rel="stylesheet" href="/style.css" />
-  </head>
-	<body>
-    <div>
-      <h1>About</h1>
-      <p>This is a simple web app demonstrating how to use Express.js with Vercel. This app shows how to create different routes, upload data to a databse, and fetch data from a database.</p>
-  </body>
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>五行草本灵鉴 - Gemini AI 增强版</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@300;700&display=swap');
+
+        :root {
+            --bg-color: #0A0A0A;
+            --paper-color: #EAD9C1;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--paper-color);
+            font-family: 'Noto Serif SC', serif;
+            overflow-x: hidden;
+            user-select: none;
+            touch-action: manipulation;
+        }
+
+        /* 动态背景星辰 */
+        .stars-container {
+            position: fixed;
+            top: 0; left: 0; width: 200%; height: 200%;
+            background-image: radial-gradient(circle at 1px 1px, var(--paper-color) 1px, transparent 0);
+            background-size: 80px 80px;
+            opacity: 0.1;
+            animation: stars-move 150s linear infinite;
+            z-index: -1;
+            pointer-events: none;
+        }
+
+        @keyframes stars-move {
+            from { transform: translate(0, 0); }
+            to { transform: translate(-400px, -400px); }
+        }
+
+        .hidden-view { display: none !important; }
+
+        .active-nav {
+            background: rgba(234, 217, 193, 0.2);
+            transform: scale(1.1);
+            opacity: 1 !important;
+        }
+
+        /* 卡牌发光效果 */
+        .card-glow {
+            box-shadow: 0 0 40px rgba(234, 217, 193, 0.1);
+        }
+
+        /* 旋转仪式动画 */
+        .ritual-spin {
+            animation: spin 10s linear infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* AI 对话框样式 */
+        .ai-bubble {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(234, 217, 193, 0.1);
+            backdrop-filter: blur(12px);
+            box-shadow: inset 0 0 20px rgba(234, 217, 193, 0.05);
+        }
+
+        .loading-dots::after {
+            content: '.';
+            animation: dots 1.5s steps(5, end) infinite;
+        }
+        @keyframes dots {
+            0%, 20% { content: '.'; }
+            40% { content: '..'; }
+            60% { content: '...'; }
+        }
+
+        /* 渐入动画 */
+        .fade-in-up {
+            animation: fadeInUp 0.6s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+        }
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col items-center">
+
+    <div class="stars-container"></div>
+
+    <!-- 顶部导航 -->
+    <nav class="w-full max-w-md p-6 flex justify-between items-center z-20 sticky top-0 bg-[#0A0A0A]/80 backdrop-blur-md border-b border-white/5">
+        <h1 class="text-xl tracking-[0.4em] font-bold">五行灵鉴</h1>
+        <div class="flex gap-4">
+            <button onclick="switchView('divine')" id="nav-divine" class="p-2 rounded-full active-nav transition-all duration-300">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/></svg>
+            </button>
+            <button onclick="switchView('garden')" id="nav-garden" class="p-2 rounded-full opacity-40 transition-all duration-300">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="7" height="7" x="3" y="3" rx="1"/><rect width="7" height="7" x="14" y="3" rx="1"/><rect width="7" height="7" x="14" y="14" rx="1"/><rect width="7" height="7" x="3" y="14" rx="1"/></svg>
+            </button>
+        </div>
+    </nav>
+
+    <!-- 主容器 -->
+    <main class="flex-1 w-full max-w-md p-6 flex flex-col items-center justify-center relative z-10 min-h-[70vh]">
+        
+        <!-- 抽卡界面 -->
+        <section id="view-divine" class="w-full text-center space-y-8">
+            <div id="altar" class="relative h-96 flex items-center justify-center">
+                <!-- 待机效果 -->
+                <div id="idle-ui" class="flex flex-col items-center">
+                    <div class="w-48 h-48 rounded-full border border-white/5 flex items-center justify-center ritual-spin mb-8">
+                        <div class="w-40 h-40 border border-white/10 rounded-full flex items-center justify-center">
+                            <div class="w-32 h-32 border border-white/20 rounded-full animate-pulse"></div>
+                        </div>
+                    </div>
+                    <p class="text-[10px] tracking-[0.8em] opacity-30">感应万物生息</p>
+                </div>
+
+                <!-- 抽卡动画状态 -->
+                <div id="drawing-ui" class="hidden-view flex flex-col items-center">
+                    <div class="w-32 h-32 border-2 border-dashed border-[#EAD9C1]/20 rounded-full animate-spin"></div>
+                    <p class="mt-8 text-xs tracking-widest opacity-60">唤灵中...</p>
+                </div>
+
+                <!-- 结果展示 -->
+                <div id="result-card" class="hidden-view fade-in-up">
+                    <!-- 卡牌内容动态注入 -->
+                </div>
+            </div>
+
+            <!-- AI 互动区 -->
+            <div id="ai-section" class="hidden-view w-full fade-in-up" style="animation-delay: 0.3s">
+                <div class="ai-bubble p-5 rounded-2xl text-left mb-6">
+                    <div id="ai-response" class="text-sm italic leading-relaxed text-[#EAD9C1]/90">
+                        正在向草本之灵请教...
+                    </div>
+                </div>
+            </div>
+
+            <div class="flex flex-col gap-4 items-center">
+                <button id="draw-btn" onclick="handleDraw()" class="px-12 py-4 rounded-full border border-[#EAD9C1]/30 tracking-[0.6em] font-light hover:bg-[#EAD9C1]/5 transition-all active:scale-95">
+                    开启占卜
+                </button>
+                <button id="ai-btn" onclick="askGemini()" class="hidden-view px-8 py-2 text-[10px] tracking-[0.3em] opacity-40 hover:opacity-100 transition-opacity">
+                    ✨ 请教草本之灵 (AI)
+                </button>
+            </div>
+        </section>
+
+        <!-- 百草园界面 -->
+        <section id="view-garden" class="hidden-view w-full fade-in-up">
+            <div class="flex justify-between items-end mb-8">
+                <h2 class="text-2xl tracking-widest font-bold">灵根存续</h2>
+                <span id="stat" class="text-[10px] opacity-40 uppercase tracking-tighter">0/5 种灵宝</span>
+            </div>
+            <div id="grid" class="grid grid-cols-5 gap-3"></div>
+        </section>
+    </main>
+
+    <footer class="p-8 opacity-20 text-[8px] uppercase tracking-[0.5em] z-10">Gemini AI Power · 2024</footer>
+
+    <script>
+        // API 密钥由环境填充
+        const apiKey = ""; 
+        let currentCard = null;
+        let isDrawing = false;
+        let collected = JSON.parse(localStorage.getItem('alchemy_v2') || '{}');
+
+        const DATA = {
+            WOOD: { label: '木', color: '#1A472A', light: '#7FFFD4', icon: 'M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8a13 13 0 0 1-13 13L11 20z' },
+            FIRE: { label: '火', color: '#8B0000', light: '#FF4500', icon: 'M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z' },
+            EARTH: { label: '土', color: '#5C4033', light: '#FFBF00', icon: 'm8 3 4 8 5-5 5 15H2L8 3z' },
+            METAL: { label: '金', color: '#4F4F4F', light: '#E5E4E2', icon: 'M14.5 17.5 3 6 3 3 6 3 17.5 14.5l1.5 1.5' },
+            WATER: { label: '水', color: '#001F3F', light: '#00BFFF', icon: 'M2 6c.6.5 1.2 1 2.5 1 2.5 0 2.5-2 5-2 2.6 0 2.4 2 5 2 2.5 0 2.5-2 5-2 1.3 0 1.9.5 2.5 1' }
+        };
+
+        const CARDS = [
+            { id: 1, type: 'WOOD', name: '薄荷', info: '清凉觉醒，疏散风热。', wisdom: '灵感如新芽，需静心感知。' },
+            { id: 2, type: 'FIRE', name: '肉桂', info: '温通经脉，补火助阳。', wisdom: '心火不灭，则无惧寒冬。' },
+            { id: 3, type: 'EARTH', name: '茯苓', info: '健脾利湿，宁心安神。', wisdom: '扎根大地，方能承载万物。' },
+            { id: 4, type: 'METAL', name: '白水晶', info: '聚焦意志，排除纷扰。', wisdom: '心如明镜，断离是非。' },
+            { id: 5, type: 'WATER', name: '黑曜石', info: '吸收负能，深层保护。', wisdom: '在黑暗中，看见真实。' }
+        ];
+
+        function switchView(view) {
+            document.getElementById('view-divine').classList.toggle('hidden-view', view !== 'divine');
+            document.getElementById('view-garden').classList.toggle('hidden-view', view !== 'garden');
+            document.getElementById('nav-divine').classList.toggle('active-nav', view === 'divine');
+            document.getElementById('nav-garden').classList.toggle('active-nav', view === 'garden');
+            if(view === 'garden') renderGarden();
+        }
+
+        function handleDraw() {
+            if (isDrawing) return;
+            
+            const idle = document.getElementById('idle-ui');
+            const drawing = document.getElementById('drawing-ui');
+            const result = document.getElementById('result-card');
+            const aiBtn = document.getElementById('ai-btn');
+            const aiSec = document.getElementById('ai-section');
+            const drawBtn = document.getElementById('draw-btn');
+
+            isDrawing = true;
+            drawBtn.innerText = '唤灵中...';
+            drawBtn.classList.add('opacity-50');
+
+            idle.classList.add('hidden-view');
+            result.classList.add('hidden-view');
+            aiSec.classList.add('hidden-view');
+            aiBtn.classList.add('hidden-view');
+            drawing.classList.remove('hidden-view');
+            
+            setTimeout(() => {
+                const card = CARDS[Math.floor(Math.random() * CARDS.length)];
+                currentCard = card;
+                
+                // 存入本地存储
+                collected[card.id] = (collected[card.id] || 0) + 1;
+                localStorage.setItem('alchemy_v2', JSON.stringify(collected));
+
+                renderCardUI(card);
+                
+                drawing.classList.add('hidden-view');
+                result.classList.remove('hidden-view');
+                aiBtn.classList.remove('hidden-view');
+                
+                drawBtn.innerText = '再次占卜';
+                drawBtn.classList.remove('opacity-50');
+                isDrawing = false;
+            }, 1500);
+        }
+
+        function renderCardUI(card) {
+            const data = DATA[card.type];
+            const container = document.getElementById('result-card');
+            container.innerHTML = `
+                <div class="w-64 h-96 rounded-[2.5rem] p-[1.5px] card-glow" 
+                     style="background: linear-gradient(145deg, ${data.light}66, transparent)">
+                    <div class="h-full bg-[#121212]/98 rounded-[2.5rem] p-7 flex flex-col items-center justify-between border border-white/5">
+                        <span class="text-[9px] tracking-[0.4em] opacity-30 uppercase">${data.label}行 · 灵物图谱</span>
+                        <div class="flex flex-col items-center">
+                            <div class="p-4 rounded-full bg-white/5 mb-6" style="color: ${data.light}">
+                                <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                                    <path d="${data.icon}" />
+                                </svg>
+                            </div>
+                            <h2 class="text-3xl font-bold tracking-[0.4em] text-white">${card.name}</h2>
+                        </div>
+                        <div class="text-center space-y-4">
+                            <div class="h-px w-8 bg-white/10 mx-auto"></div>
+                            <p class="text-xs opacity-50 px-4 leading-relaxed">${card.info}</p>
+                            <p class="text-lg italic font-light" style="color: ${data.light}">「${card.wisdom}」</p>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderGarden() {
+            const grid = document.getElementById('grid');
+            grid.innerHTML = '';
+            CARDS.forEach(card => {
+                const count = collected[card.id] || 0;
+                const data = DATA[card.type];
+                const div = document.createElement('div');
+                div.className = `aspect-square rounded-2xl border flex items-center justify-center transition-all duration-500 ${count > 0 ? 'bg-white/5 border-white/10' : 'opacity-10 border-white/5'}`;
+                if(count > 0) {
+                    div.style.color = data.light;
+                    div.style.borderColor = data.color + '44';
+                    div.innerHTML = `
+                        <div class="relative">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="${data.icon}" /></svg>
+                            ${count > 1 ? `<span class="absolute -top-3 -right-3 text-[8px] bg-[#EAD9C1] text-black px-1.5 py-0.5 rounded-full font-bold">${count}</span>` : ''}
+                        </div>
+                    `;
+                } else {
+                    div.innerHTML = `<div class="w-1 h-1 bg-white/20 rounded-full"></div>`;
+                }
+                grid.appendChild(div);
+            });
+            document.getElementById('stat').innerText = `${Object.keys(collected).length}/${CARDS.length} 种灵宝`;
+        }
+
+        // 调用 Gemini API
+        async function askGemini() {
+            if (!currentCard || isDrawing) return;
+
+            const aiSection = document.getElementById('ai-section');
+            const responseText = document.getElementById('ai-response');
+            
+            aiSection.classList.remove('hidden-view');
+            responseText.innerHTML = '正在感应草本灵气<span class="loading-dots"></span>';
+            
+            const prompt = `你是"五行草本灵鉴"的守护之灵。我刚才抽到了属于${currentCard.type}属性的"${currentCard.name}"卡。
+            请给我一段富有诗意、充满东方玄学智慧的短评（30-50字），解读它对我今天的指引。`;
+
+            try {
+                const response = await fetchWithRetry(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        contents: [{ parts: [{ text: prompt }] }],
+                        systemInstruction: { parts: [{ text: "你是一位精通易经、本草纲目和中式奇幻风格的导师，语气空灵、睿智、平和。" }] }
+                    })
+                });
+
+                const data = await response.json();
+                const text = data.candidates?.[0]?.content?.parts?.[0]?.text || "草本之灵陷入了沉思，请稍后再试。";
+                responseText.innerText = text;
+            } catch (error) {
+                responseText.innerText = "灵气脉络受扰，暂时无法传达神谕。";
+            }
+        }
+
+        async function fetchWithRetry(url, options, retries = 5, delay = 1000) {
+            try {
+                const res = await fetch(url, options);
+                if (!res.ok) throw new Error();
+                return res;
+            } catch (err) {
+                if (retries <= 0) throw err;
+                await new Promise(resolve => setTimeout(resolve, delay));
+                return fetchWithRetry(url, options, retries - 1, delay * 2);
+            }
+        }
+    </script>
+</body>
 </html>
